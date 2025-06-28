@@ -12,7 +12,7 @@ class WasteClassifierNN(nn.Module):
         dummy_output = self.forward_features(dummy_input)
         flattened_size = dummy_output.view(-1).shape[0]
         self.fc1 = nn.Linear(flattened_size,128)
-        self.fc2 = nn.Linear(128,10)
+        self.fc2 = nn.Linear(128,12)
     
     def forward_features(self,x):
         x = self.pool(torch.relu(self.conv1(x)))

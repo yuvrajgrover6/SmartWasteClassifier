@@ -1,5 +1,6 @@
 from torchvision import datasets,transforms
 from torch.utils.data import DataLoader,random_split
+import os
 
 ##Loading the dataset
 def get_data_loaders(data_dir,batch_size=32):
@@ -13,13 +14,13 @@ def get_data_loaders(data_dir,batch_size=32):
         )
     ]
 )
-    dataset = datasets.ImageFolder(root=data_dir,transform=transform)
+    train_dir = os.path.join(data_dir, "train")
+    val_dir = os.path.join(data_dir, "val")
 
-    #Splitting the dataset into 80% training and 20% validation
-    train_size = int(0.8*len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset,val_dataset = random_split(dataset,[train_size,val_size])
-
+    
+    train_dataset= datasets.ImageFolder(root=train_dir,transform=transform)
+    val_dataset = datasets.ImageFolder(root=val_dir,transform=transform)
+    
     train_loader = DataLoader(train_dataset,batch_size=32,shuffle=True);
-    val_loader = DataLoader(val_dataset,batch_size=32)
+    val_loader = DataLoader(val_dataset,batch_size=32,shuffle=False)
     return train_loader,val_loader
