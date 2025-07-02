@@ -1,36 +1,24 @@
-import torch
-from torchvision import transforms
-from PIL import Image
+# gui_components.py
 import cv2
-import numpy as np
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from model.model_arch import WasteClassifierNN
+from ultralytics import YOLO
+import torch
 
-def load_model(model_path="waste_classifier.pth"):
+def load_model():
     device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
-    model = WasteClassifierNN(input_shape=(3, 160, 160), dropout=0.22588767769727539).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.eval()
+    model = YOLO("waste_yolov8_model/weights/best.pt")
+    model.to(device)
+    return model, device
 
-    class_names = [
-        "battery", "biological", "brown-glass", "cardboard", "clothes",
-        "green-glass", "metal", "paper", "plastic", "shoes", "white-glass", "trash"
-    ]
-    return model, device, class_names
+def draw_boxes(results, frame):
+    for result in results:
+        boxes = result.boxes
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            cls_id = int(box.cls[0])
+            conf = float(box.conf[0])
 
-def transform_frame():
-    return transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((160, 160)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225]),
-    ])
-
-def predict_class(model, input_tensor, class_names):
-    with torch.no_grad():
-        outputs = model(input_tensor)
-        _, predicted = torch.max(outputs, 1)
-    return class_names[predicted.item()]
+            label = result.names[cls_id]
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, f"{label} {conf:.2f}", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    return frame
